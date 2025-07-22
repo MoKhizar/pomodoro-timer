@@ -14,11 +14,22 @@ task
 if [ "$1" = "--total" ]; then
     LOG_FILE="/home/lilkhizzi/Desktop/Project/study_log.txt"
     TODAY=$(date '+%Y-%m-%d')
+    TOTAL_MIN=0
+
     if [ -f "$LOG_FILE" ]; then
-        TOTAL_MIN=$(grep "$TODAY" "$LOG_FILE" | awk '{sum += $2} END {print sum}')
+        while read -r line; do
+            # Only process lines that start with today's date
+            if [[ "$line" == "$TODAY"* ]]; then
+                # Extract second field (study time in minutes or seconds)
+                value=$(echo "$line" | cut -d' ' -f2)
+                TOTAL_MIN=$((TOTAL_MIN + value))
+            fi
+        done < "$LOG_FILE"
+
         if [ -z "$TOTAL_MIN" ]; then
             TOTAL_MIN=0
         fi
+
         HOURS=$((TOTAL_MIN / 60))
         MIN=$((TOTAL_MIN % 60))
         echo "Today's study: $HOURS hours, $MIN minutes"
@@ -38,12 +49,6 @@ fi
 # Get user input for work and rest times
 work_time=${1:-25}
 rest_time=${2:-5}
-
-# Validate inputs are positive integers
-if ! [[ "$work_time" =~ ^[0-9]+$ ]] || ! [[ "$rest_time" =~ ^[0-9]+$ ]] || [ "$work_time" -le 0 ] || [ "$rest_time" -le 0 ]; then
-    echo "Error: Inputs must be positive integers."
-    exit 1
-fi
 
 # Convert to seconds if in minutes
 if [ "$unit" = "minutes" ]; then
